@@ -1,0 +1,25 @@
+# Ignore python compiled
+*pyc
+
+# Ignore setup.py build information
+*egg-info
+dist/*
+build/*
+
+# Ignore pytest caching
+.pytest_cache
+.mypy_cache
+__pycache__
+
+# Ignore visual studio code
+.vscode
+
+
+# Ignore any loose log files
+*.log
+
+# Ignore .tgz files
+*.tgz
+
+# Ignore config file
+*.config

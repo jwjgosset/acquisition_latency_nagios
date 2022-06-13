@@ -154,7 +154,7 @@ def get_channel_availability(
 
 
 def check_availability_percentage(
-    unavailable_channels: List[str],
+    available_channels: int,
     expected_channel_count: int
 ) -> float:
     '''
@@ -180,8 +180,7 @@ def check_availability_percentage(
     '''
 
     try:
-        percent_channels_available = (expected_channel_count -
-                                      (len(unavailable_channels)) * 100 /
+        percent_channels_available = (available_channels * 100 /
                                       expected_channel_count)
     except ZeroDivisionError as e:
         raise e

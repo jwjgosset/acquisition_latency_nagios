@@ -2,6 +2,8 @@ from eew_nagios.apolloserver import availability_health  # type: ignore
 from datetime import datetime
 from eew_nagios.nagios import aquision_availability
 from eew_nagios.config import LogLevels
+from eew_nagios.nagios.models import NagiosPerformance
+from typing import List
 import logging
 import click
 
@@ -57,12 +59,12 @@ import click
 )
 def main(
     expected_channels: int,
-    warning: float,
-    critical: float,
-    warning_time: float,
-    critical_time: float,
-    warning_count: int,
-    critical_count: int,
+    warning: str,
+    critical: str,
+    warning_time: str,
+    critical_time: str,
+    warning_count: str,
+    critical_count: str,
     logfile: str,
     log_level: str
 ):
@@ -100,13 +102,13 @@ def main(
                   ', '.join(unavailable_channels))
 
     # Determine the state according to the percentage of available channels
-    state, statetxt = aquision_availability.get_state(
+    state = aquision_availability.get_state(
         percentage=percent,
         warn_threshold=warning,
         crit_threshold=critical)
 
     # Determine the state accoding to the latency thresholds
-    lat_state, lat_statetxt = availability_health.get_latency_threshold_state(
+    latency_results = availability_health.get_latency_threshold_state(
         channel_latency,
         warn_time=warning_time,
         crit_time=critical_time,
@@ -116,25 +118,49 @@ def main(
 
     # If the latency threshold state is higher than the available channel
     # state, overwrite it
-    if lat_state > state:
-        state = lat_state
-        statetxt = lat_statetxt
+    if latency_results.state > state:
+        state = latency_results.state
 
-    message = aquision_availability.assemble_message(
-        statetxt=statetxt,
-        percentage=percent)
+    performances: List[NagiosPerformance] = []
 
-    print(message)
+    performances.append(NagiosPerformance(
+        label='available',
+        value=percent,
+        uom='%'
+    ))
+    performances.append(NagiosPerformance(
+        label='critical_count',
+        value=latency_results.crit_count,
+        critical=float(critical_count)
+    ))
+    performances.append(NagiosPerformance(
+        label='warning_count',
+        value=latency_results.warn_count,
+        warning=float(warning_count)
+    ))
 
-    print(f"Channels in binder but not present: {len(unavailable_channels)}")
+    details = ("Channels in binder but not present: " +
+               f"{len(unavailable_channels)}\n")
+
     for channel in unavailable_channels:
-        print(channel)
+        details += f"{channel} "
 
-    print("Channels sorted by latency: ")
+    details += "\n\nChannels sorted by latency: \n"
 
     channel_latency.sort(key=lambda x: x.latency)
+
     for channel_lat in channel_latency:
-        print(f"{channel_lat.channel} {channel_lat.timestamp}")
+        details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
+                    f"({channel_lat.latency}s)")
+
+    message = aquision_availability.assemble_message(
+        state=state,
+        percentage=percent,
+        performances=performances,
+        details=details
+        )
+
+    print(message)
 
     return state
 

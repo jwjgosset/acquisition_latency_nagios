@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 # from eew_nagios.nagios import nrdp
 from requests import HTTPError
 
+from eew_nagios.nagios.models import NagiosOutputCode, NagiosRange
+
 
 @dataclass
 class ChannelLatency:
@@ -191,31 +193,35 @@ def check_availability_percentage(
     return percent_channels_available
 
 
+@dataclass
+class LatencyCheckResults:
+    crit_count: int
+    warn_count: int
+    state: NagiosOutputCode
+
+
 def get_latency_threshold_state(
     channel_latencies: List[ChannelLatency],
-    warn_time: float,
-    crit_time: float,
-    warn_threshold: int,
-    crit_threshold: int
-) -> Tuple[int, str]:
+    warn_time: str,
+    crit_time: str,
+    warn_threshold: str,
+    crit_threshold: str
+) -> LatencyCheckResults:
 
     crit_count = 0
     warn_count = 0
 
     for channel in channel_latencies:
-        if channel.latency > crit_time:
+        if NagiosRange(crit_time).in_range(channel.latency):
             crit_count += 1
-        elif channel.latency > warn_time:
+        elif NagiosRange(warn_time).in_range(channel.latency):
             warn_count += 1
 
-    if crit_count >= crit_threshold:
-        state = 2
-        statetxt = 'CRITICAL'
-    elif warn_count >= warn_threshold:
-        state = 1
-        statetxt = 'WARNING'
+    if NagiosRange(crit_threshold).in_range(crit_count):
+        state = NagiosOutputCode.critical
+    elif NagiosRange(warn_threshold).in_range(warn_count):
+        state = NagiosOutputCode.warning
     else:
-        state = 0
-        statetxt = 'OK'
+        state = NagiosOutputCode.ok
 
-    return state, statetxt
+    return LatencyCheckResults(crit_count, warn_count, state)

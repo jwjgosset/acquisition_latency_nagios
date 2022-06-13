@@ -1,12 +1,15 @@
 from eew_nagios.nagios import nrdp
-from eew_nagios import nagios
-from typing import Tuple, Union
+from eew_nagios.nagios.models import NagiosPerformance, NagiosOutputCode, \
+    NagiosRange, NagiosResult, NagiosVerbose
+from typing import List
 
 
 def assemble_message(
-    statetxt: str,
-    percentage: float
-) -> str:
+    state: NagiosOutputCode,
+    percentage: float,
+    performances: List[NagiosPerformance],
+    details: str
+) -> NagiosResult:
     '''
     Assembles the message to feet to Nagios to display in Nagios for this
     service
@@ -26,12 +29,18 @@ def assemble_message(
     str: The assembled status message with performance data to display in
     Nagios
     '''
-    performance = '%.2f' % percentage
-    info = f'{performance}% of expected channels'
+    percent = '%.2f' % percentage
+    info = f'{percent}% of expected channels available'
 
-    message = f"{statetxt} - {info} | channels={performance}%"
+    result = NagiosResult(
+        summary=info,
+        verbose=NagiosVerbose.multiline,
+        status=state,
+        performances=performances,
+        details=details
+    )
 
-    return message
+    return result
 
 
 def prepare_check_results(
@@ -72,9 +81,9 @@ def prepare_check_results(
 
 def get_state(
     percentage: float,
-    warn_threshold: Union[str, float],
-    crit_threshold: Union[str, float]
-) -> Tuple[int, str]:
+    warn_threshold: str,
+    crit_threshold: str
+) -> NagiosOutputCode:
     '''
     Determine the state of the service check according the the thresholds
 
@@ -92,60 +101,11 @@ def get_state(
     str: The state text for the current state
     '''
 
-    if range_check(percentage, crit_threshold):
-        state = nagios.STATE_CRITICAL
-        statetxt = "CRITICAL"
-    elif range_check(percentage, warn_threshold):
-        state = nagios.STATE_WARNING
-        statetxt = "WARNING"
+    if NagiosRange(crit_threshold).in_range(percentage):
+        state = NagiosOutputCode.critical
+    elif NagiosRange(warn_threshold).in_range(percentage):
+        state = NagiosOutputCode.warning
     else:
-        state = nagios.STATE_OK
-        statetxt = "OK"
+        state = NagiosOutputCode.ok
 
-    return state, statetxt
-
-
-def range_check(
-    value: float,
-    threshold: Union[float, str]
-) -> bool:
-    """
-    Compare average to critical/warning based on a given warning/critical
-    integer value or string value (typically includes a colon to
-    represent >= and <=)
-
-    Threshold can be:
-    - float
-    - float:float (min to max)
-    - float: (min)
-    - :float (max)
-
-    :raises ValueError: Invalid NRDP range check
-    """
-    # Check if the threshold is numeric then use threshold comparison
-    if isinstance(threshold, float):
-        return value > float(threshold)
-
-    try:
-        # its a string so lets try to convert it
-        return value > float(threshold)
-    except ValueError:
-        values = threshold.strip().split(':')
-        # Check that the split resulted in 2 values
-        if len(values) != 2:
-            raise ValueError(f'Invalid threshold {threshold}')
-        # Values[0] doesn't exist so compare if > critical threshold
-        if len(values[0]) and not len(values[1]):
-            if value > float(values[0]):
-                return True
-        # Values[1] doesn't exist so compare if < critical threshold
-        elif len(values[1]) and not len(values[0]):
-            if value < float(values[1]):
-                return True
-        # Otherwise is a range so check between min and max critical thresholds
-        else:
-            minthreshold = float(values[0])
-            maxthreshold = float(values[1])
-            if value >= minthreshold and value < maxthreshold:
-                return True
-    return False
+    return state

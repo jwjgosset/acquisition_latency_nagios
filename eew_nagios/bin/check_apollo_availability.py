@@ -3,7 +3,7 @@ from datetime import datetime
 from eew_nagios.nagios import aquision_availability
 from eew_nagios.config import LogLevels
 from eew_nagios.nagios.models import NagiosPerformance
-from typing import List
+from typing import List, Optional
 import logging
 import click
 
@@ -58,7 +58,7 @@ import click
 
 )
 def main(
-    expected_channels: int,
+    expected_channels: str,
     warning: str,
     critical: str,
     warning_time: str,
@@ -66,7 +66,7 @@ def main(
     warning_count: str,
     critical_count: str,
     logfile: str,
-    log_level: str
+    log_level: Optional[str]
 ):
 
     # Configure logging
@@ -95,7 +95,7 @@ def main(
     # Calculate percentage of channels that are available
     percent = availability_health.check_availability_percentage(
         available_channels=len(acquisition_statistics.channel_latency),
-        expected_channel_count=expected_channels)
+        expected_channel_count=int(expected_channels))
 
     logging.debug(f"Available channels: {percent}%")
     logging.debug("Unvailable Channels: " +
@@ -109,7 +109,7 @@ def main(
 
     # Determine the state accoding to the latency thresholds
     latency_results = availability_health.get_latency_threshold_state(
-        acquisition_statistics.channel_latency,
+        acquisition_statistics,
         warn_time=warning_time,
         crit_time=critical_time,
         warn_threshold=warning_count,
@@ -139,7 +139,7 @@ def main(
         warning=float(warning_count)
     ))
 
-    details = ("Channels in binder but not present: " +
+    details = ("Channels more than 1 hour old: " +
                f"{len(acquisition_statistics.unavailable_channels)}\n")
 
     for channel in acquisition_statistics.unavailable_channels:
@@ -147,11 +147,13 @@ def main(
 
     details += "\n\nChannels sorted by latency: \n"
 
-    acquisition_statistics.channel_latency.sort(key=lambda x: x.latency)
+    acquisition_statistics.channel_latency.sort(
+        key=lambda x: x.latency,
+        reverse=True)
 
     for channel_lat in acquisition_statistics.channel_latency:
         details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
-                    f"({channel_lat.latency}s)")
+                    f"({channel_lat.latency}s)\n")
 
     message = aquision_availability.assemble_message(
         state=state,

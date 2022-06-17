@@ -29,8 +29,19 @@ def assemble_message(
     str: The assembled status message with performance data to display in
     Nagios
     '''
+    statetxt = ''
+
+    if state == NagiosOutputCode.ok:
+        statetxt = 'OK'
+    elif state == NagiosOutputCode.warning:
+        statetxt = 'WARNING'
+    elif state == NagiosOutputCode.critical:
+        statetxt = 'CRITICAL'
+    else:
+        statetxt = 'UNKNOWN'
+
     percent = '%.2f' % percentage
-    info = f'{percent}% of expected channels available'
+    info = f'{statetxt}: {percent}% of expected channels available'
 
     result = NagiosResult(
         summary=info,

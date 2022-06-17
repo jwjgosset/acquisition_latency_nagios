@@ -2,7 +2,7 @@
 Module with functions for interacting with and parsing the output of the
 ApolloServer Availability API
 '''
-from attr import dataclass
+from dataclasses import dataclass
 import requests
 import logging
 from typing import Dict, List
@@ -212,7 +212,7 @@ def check_availability_percentage(
 
 
 def get_latency_threshold_state(
-    channel_latencies: List[ChannelLatency],
+    acquisition_stats: AcquisionStatistics,
     warn_time: str,
     crit_time: str,
     warn_threshold: str,
@@ -222,11 +222,13 @@ def get_latency_threshold_state(
     crit_count = 0
     warn_count = 0
 
-    for channel in channel_latencies:
+    for channel in acquisition_stats.channel_latency:
         if NagiosRange(crit_time).in_range(channel.latency):
             crit_count += 1
         elif NagiosRange(warn_time).in_range(channel.latency):
             warn_count += 1
+
+    crit_count += len(acquisition_stats.unavailable_channels)
 
     if NagiosRange(crit_threshold).in_range(crit_count):
         state = NagiosOutputCode.critical

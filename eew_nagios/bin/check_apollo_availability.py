@@ -87,19 +87,19 @@ def main(
     end_time = datetime.now()
 
     # Get the channel_latency objects and list of unavailable channels
-    channel_latency, unavailable_channels = \
+    acquisition_statistics = \
         availability_health.get_channel_availability(
             apollo_ip="localhost",
             end_time=end_time)
 
     # Calculate percentage of channels that are available
     percent = availability_health.check_availability_percentage(
-        available_channels=len(channel_latency),
+        available_channels=len(acquisition_statistics.channel_latency),
         expected_channel_count=expected_channels)
 
     logging.debug(f"Available channels: {percent}%")
     logging.debug("Unvailable Channels: " +
-                  ', '.join(unavailable_channels))
+                  ', '.join(acquisition_statistics.unavailable_channels))
 
     # Determine the state according to the percentage of available channels
     state = aquision_availability.get_state(
@@ -109,7 +109,7 @@ def main(
 
     # Determine the state accoding to the latency thresholds
     latency_results = availability_health.get_latency_threshold_state(
-        channel_latency,
+        acquisition_statistics.channel_latency,
         warn_time=warning_time,
         crit_time=critical_time,
         warn_threshold=warning_count,
@@ -140,16 +140,16 @@ def main(
     ))
 
     details = ("Channels in binder but not present: " +
-               f"{len(unavailable_channels)}\n")
+               f"{len(acquisition_statistics.unavailable_channels)}\n")
 
-    for channel in unavailable_channels:
+    for channel in acquisition_statistics.unavailable_channels:
         details += f"{channel} "
 
     details += "\n\nChannels sorted by latency: \n"
 
-    channel_latency.sort(key=lambda x: x.latency)
+    acquisition_statistics.channel_latency.sort(key=lambda x: x.latency)
 
-    for channel_lat in channel_latency:
+    for channel_lat in acquisition_statistics.channel_latency:
         details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
                     f"({channel_lat.latency}s)")
 

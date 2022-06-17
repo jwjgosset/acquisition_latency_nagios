@@ -5,10 +5,8 @@ ApolloServer Availability API
 from attr import dataclass
 import requests
 import logging
-from typing import Tuple, Dict, List
+from typing import Dict, List
 from datetime import datetime, timedelta
-# from eew_nagios import nagios
-# from eew_nagios.nagios import nrdp
 from requests import HTTPError
 
 from eew_nagios.nagios.models import NagiosOutputCode, NagiosRange
@@ -21,11 +19,38 @@ class ChannelLatency:
     latency: float
 
 
+@dataclass
+class AcquisionStatistics:
+    channel_latency: List[ChannelLatency]
+    unavailable_channels: List[str]
+
+
+@dataclass
+class LatencyCheckResults:
+    crit_count: int
+    warn_count: int
+    state: NagiosOutputCode
+
+
 def get_latency(
     current_time: datetime,
     last_time: datetime,
 ) -> float:
+    '''
+    Determine a latency value based on the two provided timestamps
 
+    Parameter
+    ---------
+    current_time: datetime
+        The current time when acquision statistics were acquired
+
+    last_time: datetime
+        The timestamp of the last data timestamp to use to determine latency
+
+    Returns
+    -------
+    float: The latency in seconds
+    '''
     latencydelta = current_time - last_time
 
     return latencydelta.total_seconds()
@@ -102,19 +127,12 @@ def get_availability_json(
 def get_channel_availability(
     apollo_ip: str,
     end_time: datetime
-) -> Tuple[List[ChannelLatency], List[str]]:
+) -> AcquisionStatistics:
     '''
     Return a list of available channels for the time range. Available
     channels are those which appear in the Availability json and are not empty
 
-    Parameters
-    ----------
-    availability: Dict
-    Json-formatted dictionary object containing availability information
 
-    Returns
-    -------
-    List: A list of the IDs of unavailable channels
 
     Raises
     ------
@@ -149,7 +167,7 @@ def get_channel_availability(
                 channel_latency.extend([ChannelLatency(channel["id"],
                                         last_time, latency)])
 
-        return channel_latency, unavailable_channels
+        return AcquisionStatistics(channel_latency, unavailable_channels)
 
     except KeyError as e:
         raise e
@@ -193,13 +211,6 @@ def check_availability_percentage(
     return percent_channels_available
 
 
-@dataclass
-class LatencyCheckResults:
-    crit_count: int
-    warn_count: int
-    state: NagiosOutputCode
-
-
 def get_latency_threshold_state(
     channel_latencies: List[ChannelLatency],
     warn_time: str,
@@ -219,7 +230,7 @@ def get_latency_threshold_state(
 
     if NagiosRange(crit_threshold).in_range(crit_count):
         state = NagiosOutputCode.critical
-    elif NagiosRange(warn_threshold).in_range(warn_count):
+    elif NagiosRange(warn_threshold).in_range((warn_count+crit_count)):
         state = NagiosOutputCode.warning
     else:
         state = NagiosOutputCode.ok

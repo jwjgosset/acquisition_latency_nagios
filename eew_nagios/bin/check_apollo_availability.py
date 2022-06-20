@@ -1,11 +1,12 @@
 from eew_nagios.apolloserver import availability_health  # type: ignore
 from datetime import datetime
-from eew_nagios.nagios import aquision_availability
+from eew_nagios.nagios import acquision_availability
 from eew_nagios.config import LogLevels
 from eew_nagios.nagios.models import NagiosPerformance
 from typing import List, Optional
 import logging
 import click
+import sys
 
 
 @click.command()
@@ -55,7 +56,6 @@ import click
     type=click.Choice([v.value for v in LogLevels]),
     help="Log more information about the program's execution",
     default=LogLevels.WARNING
-
 )
 def main(
     expected_channels: str,
@@ -67,7 +67,7 @@ def main(
     critical_count: str,
     logfile: str,
     log_level: Optional[str]
-):
+) -> int:
 
     # Configure logging
     if logfile is not None:
@@ -102,7 +102,7 @@ def main(
                   ', '.join(acquisition_statistics.unavailable_channels))
 
     # Determine the state according to the percentage of available channels
-    state = aquision_availability.get_state(
+    state = acquision_availability.get_state(
         percentage=percent,
         warn_threshold=warning,
         crit_threshold=critical)
@@ -126,7 +126,9 @@ def main(
     performances.append(NagiosPerformance(
         label='available',
         value=percent,
-        uom='%'
+        uom='%',
+        warning=float(warning.strip(':')),
+        critical=float(critical.strip(':'))
     ))
     performances.append(NagiosPerformance(
         label='critical_count',
@@ -155,7 +157,7 @@ def main(
         details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
                     f"({channel_lat.latency}s)\n")
 
-    message = aquision_availability.assemble_message(
+    message = acquision_availability.assemble_message(
         state=state,
         percentage=percent,
         performances=performances,
@@ -164,8 +166,8 @@ def main(
 
     print(message)
 
-    return state
+    return state.value
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

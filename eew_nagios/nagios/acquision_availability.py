@@ -2,6 +2,14 @@ from eew_nagios.nagios import nrdp
 from eew_nagios.nagios.models import NagiosPerformance, NagiosOutputCode, \
     NagiosRange, NagiosResult, NagiosVerbose
 from typing import List
+from dataclasses import dataclass
+
+
+@dataclass
+class LatencyCheckResults:
+    crit_count: int
+    warn_count: int
+    state: NagiosOutputCode
 
 
 def assemble_message(

@@ -8,8 +8,8 @@ import logging
 from typing import Dict, List
 from datetime import datetime, timedelta
 from requests import HTTPError
-
 from eew_nagios.nagios.models import NagiosOutputCode, NagiosRange
+from eew_nagios.nagios.acquision_availability import LatencyCheckResults
 
 
 @dataclass
@@ -23,13 +23,6 @@ class ChannelLatency:
 class AcquisionStatistics:
     channel_latency: List[ChannelLatency]
     unavailable_channels: List[str]
-
-
-@dataclass
-class LatencyCheckResults:
-    crit_count: int
-    warn_count: int
-    state: NagiosOutputCode
 
 
 def get_latency(
@@ -174,8 +167,8 @@ def get_channel_availability(
 
                 latency = get_latency(end_time, last_time)
 
-                channel_latency.extend([ChannelLatency(channel["id"],
-                                        last_time, latency)])
+                channel_latency.append(ChannelLatency(channel["id"],
+                                       last_time, latency))
 
         return AcquisionStatistics(channel_latency, unavailable_channels)
 

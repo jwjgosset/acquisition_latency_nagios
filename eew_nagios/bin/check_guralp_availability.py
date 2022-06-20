@@ -1,151 +1,172 @@
 import logging
-import argparse
-# from eew_nagios.data import NRDP_CONFIG
-from eew_nagios.guralpdatacenter import guralp_availability  # type: ignore
-from eew_nagios.nagios import aquision_availability
-# from eew_nagios.nagios import nrdp
-# import configparser
+from eew_nagios.guralpdatacenter import guralp_availability
+from eew_nagios.nagios import acquision_availability
+import sys
 from datetime import datetime
+import click
+from eew_nagios.config import LogLevels
+from typing import Optional, List
+from eew_nagios.nagios.models import NagiosPerformance
 
 
-def main():
-    argsparser = argparse.ArgumentParser()
-    argsparser.add_argument(
-        '-v',
-        '--verbose',
-        action='count',
-        default=0,
-        help="Log more information about the program's execution"
+@click.command()
+@click.option(
+    '--expected-channels',
+    help=('The number or channels expected to arrive at the aquisition ' +
+          'server')
+)
+@click.option(
+    '--warning',
+    help=('The warning range for the percentage of channels available. ' +
+          'See Nagios documentation')
+)
+@click.option(
+    '--critical',
+    help=('The critical range for the percentage of channels available. ' +
+          'See Nagios documentation'),
+    required=True
+)
+@click.option(
+    '--warning-time',
+    help=("The latency in seconds for a channel that should be " +
+          "considered for a warning state")
     )
-    argsparser.add_argument(
-        '-L',
-        '--logfile',
-        default=None,
-        help='To log to a file instead of stdout, specify the filename.',
-        type=str
+@click.option(
+    '--critical-time',
+    help=("The latency in seconds for a channel that should be " +
+          "considered for a critical state")
     )
-    # argsparser.add_argument(
-    #     '-c',
-    #     '--config',
-    #     default=NRDP_CONFIG,
-    #     help="Config file"
-    # )
-    argsparser.add_argument(
-        '-k',
-        '--cachefolder',
-        help=('The folder where the Guralp Datacenter stores cached data. ' +
-              'Default: /var/cache/guralp'),
-        default='/var/cache/guralp/'
+@click.option(
+    '--warning-count',
+    help=("The number of channels required exceeding the waring-time to " +
+          "qualify for a warning state")
     )
-    argsparser.add_argument(
-        '-n',
-        '--hostname',
-        help='The hostname of the guralp datacenter as it appears in Nagios',
-        required=True
+@click.option(
+    '--critical-count',
+    help=("The number of channels required exceeding the critical-time " +
+          "to qualify for a critical state"),
     )
-    argsparser.add_argument(
-        '-e',
-        '--expectedchannels',
-        required=True,
-        help='The expected number of channels.',
-        type=int
-    )
-    argsparser.add_argument(
-        '-w',
-        '--warning',
-        help='The warning range for the check. See Nagios documentation',
-        required=True
-    )
-    argsparser.add_argument(
-        '-c',
-        '--critical',
-        help='The critical range for the check. See Nagios documentation',
-        required=True
-    )
-
-    args = argsparser.parse_args()
-
-    if args.verbose >= 3:
-        logging_level = logging.DEBUG
-    elif args.verbose == 2:
-        logging_level = logging.INFO
-    elif args.verbose == 1:
-        logging_level = logging.WARNING
-    else:
-        logging_level = logging.ERROR
-
-    if args.logfile is not None:
+@click.option(
+    '--logfile',
+    default=None,
+    help='To log to a file instead of stdout, specify the filename.',
+)
+@click.option(
+    '--log-level',
+    type=click.Choice([v.value for v in LogLevels]),
+    help="Log more information about the program's execution",
+    default=LogLevels.WARNING
+)
+@click.option(
+    '--cache-folder',
+    help="Guralp cache folder",
+    default='/var/cache/guralp'
+)
+def main(
+    expected_channels: int,
+    warning: str,
+    critical: str,
+    warning_time: str,
+    critical_time: str,
+    warning_count: str,
+    critical_count: str,
+    logfile: str,
+    log_level: Optional[str],
+    cache_folder: str
+):
+    # Configure logging
+    if logfile is not None:
         logging.basicConfig(
             format='%(asctime)s:%(levelname)s:%(message)s',
             datefmt="%Y-%m-%d %H:%M:%S",
-            level=logging_level,
-            filename=args.logfile, filemode='W')
+            level=log_level,
+            filename=logfile, filemode='W')
     else:
         logging.basicConfig(
             format='%(asctime)s:%(levelname)s:%(message)s',
             datefmt="%Y-%m-%d %H:%M:%S",
-            level=logging_level)
+            level=log_level)
 
-    cache_folder = args.cachefolder
+    # Use the current time to compare to channel timestamps
+    end_time = datetime.now()
 
-    id = args.hostname
-
-    # configfile = args.config
-
-    # config = configparser.ConfigParser()
-    # config.read(configfile)
-
-    # logging.debug(config.sections())
-    # logging.debug(config['nagios'])
-
-    # nagios_ip = config['nagios']['nagios']
-
-    # api_key = config['nagios']['api_key']
-
-    # token = config['nagios']['token']
-
-    # fortimus_list = guralp_availability.get_fortimus(
-    #     nagios_ip=nagios_ip,
-    #     api_key=api_key
-    # )
-
-    expectedchannels = args.expectedchannels
-
-    percent_available = guralp_availability.check_availability(
-        expected_channels=expectedchannels,
+    # Get the last timestamp and latency values for all the channels available
+    # in the cache folder
+    acquisition_statistics = guralp_availability.get_channel_latency(
         cache_folder=cache_folder,
-        time=datetime.now()
+        time=end_time
     )
 
-    state, statetxt = aquision_availability.get_state(
-        percentage=percent_available,
-        warn_threshold=args.warning,
-        crit_threshold=args.critical)
+    # Determine the percentage expected channels that have latency files in
+    # the cache
+    percent_available = guralp_availability.check_availability(
+        expected_channels=expected_channels,
+        found_channels=len(acquisition_statistics.channel_latency)
+    )
 
-    message = aquision_availability.assemble_message(
-        statetxt=statetxt,
-        id=id,
-        percentage=percent_available
+    # Determine the state based on this percentage
+    state = acquision_availability.get_state(
+        percentage=percent_available,
+        warn_threshold=warning,
+        crit_threshold=critical)
+
+    latency_results = guralp_availability.get_latency_threshold_state(
+        acquisition_stats=acquisition_statistics,
+        warn_time=warning_time,
+        crit_time=critical_time,
+        warn_threshold=warning_count,
+        crit_threshold=critical_count
+    )
+
+    if latency_results.state > state:
+        state = latency_results.state
+
+    performances: List[NagiosPerformance] = []
+
+    performances.append(NagiosPerformance(
+        label='available',
+        value=percent_available,
+        uom='%',
+        warning=float(warning.strip(':')),
+        critical=float(critical.strip(':'))
+    ))
+    performances.append(NagiosPerformance(
+        label='critical_count',
+        value=latency_results.crit_count,
+        critical=float(critical_count)
+    ))
+    performances.append(NagiosPerformance(
+        label='warning_count',
+        value=latency_results.warn_count,
+        warning=float(warning_count)
+    ))
+
+    missing_channels = expected_channels - len(
+        acquisition_statistics.channel_latency)
+
+    details = (f"Channels missing from cache folder: {missing_channels}")
+
+    details += "\n\nChannels sorted by latency: \n"
+
+    acquisition_statistics.channel_latency.sort(
+        key=lambda x: x.latency,
+        reverse=True)
+
+    for channel_lat in acquisition_statistics.channel_latency:
+        details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
+                    f"({channel_lat.latency}s)\n")
+
+    message = acquision_availability.assemble_message(
+        state=state,
+        percentage=percent_available,
+        performances=performances,
+        details=details
     )
 
     print(message)
 
-    # check_results = nrdp.NagiosCheckResults()
-
-    # check_results.append(aquision_availability.prepare_check_results(
-    #     host_name=id,
-    #     state=state,
-    #     output=message
-    # ))
-
-    # nrdp.submit(
-    #         check_results,
-    #         nagios_ip,
-    #         token=token
-    #     )
-
-    return state
+    return state.value
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

@@ -68,9 +68,7 @@ def check_availability(
     float: The percentage of expected channels that have actually arrived in
     the last hour
     '''
-    available_channels = 0
-
-    percent_available = (available_channels / expected_channels) * 100
+    percent_available = (found_channels / expected_channels) * 100
 
     return percent_available
 

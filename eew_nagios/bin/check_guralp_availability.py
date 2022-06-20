@@ -100,7 +100,7 @@ def main(
     # Determine the percentage expected channels that have latency files in
     # the cache
     percent_available = guralp_availability.check_availability(
-        expected_channels=expected_channels,
+        expected_channels=int(expected_channels),
         found_channels=len(acquisition_statistics.channel_latency)
     )
 
@@ -141,7 +141,7 @@ def main(
         warning=float(warning_count)
     ))
 
-    missing_channels = expected_channels - len(
+    missing_channels = int(expected_channels) - len(
         acquisition_statistics.channel_latency)
 
     details = (f"Channels missing from cache folder: {missing_channels}")

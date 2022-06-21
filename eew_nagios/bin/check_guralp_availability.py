@@ -165,7 +165,7 @@ def main(
 
     print(message)
 
-    return state.value
+    sys.exit(state.value)
 
 
 if __name__ == '__main__':

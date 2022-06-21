@@ -67,7 +67,7 @@ def main(
     critical_count: str,
     logfile: str,
     log_level: Optional[str]
-) -> int:
+):
 
     # Configure logging
     if logfile is not None:
@@ -166,7 +166,7 @@ def main(
 
     print(message)
 
-    return state.value
+    sys.exit(state.value)
 
 
 if __name__ == '__main__':

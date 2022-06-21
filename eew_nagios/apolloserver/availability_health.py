@@ -167,6 +167,9 @@ def get_channel_availability(
 
                 latency = get_latency(end_time, last_time)
 
+                if latency < 0:
+                    latency = 0
+
                 channel_latency.append(ChannelLatency(channel["id"],
                                        last_time, latency))
 

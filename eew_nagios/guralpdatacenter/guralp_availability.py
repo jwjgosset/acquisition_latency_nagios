@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 import pathlib
 import logging
 from dataclasses import dataclass
@@ -100,7 +100,10 @@ def get_latencystatistics_of_last_row(
 
     channel_name = line[1]
 
-    timestamp = datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S.%f")
+    network_latency = float(line[2])
+
+    timestamp = (datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S.%f") -
+                 timedelta(seconds=network_latency))
 
     latency = (time - timestamp).total_seconds()
 

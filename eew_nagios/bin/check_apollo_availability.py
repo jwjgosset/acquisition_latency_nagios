@@ -1,5 +1,5 @@
 from eew_nagios.apolloserver import availability_health  # type: ignore
-from datetime import datetime
+from datetime import datetime, timedelta
 from eew_nagios.nagios import acquision_availability
 from eew_nagios.config import LogLevels
 from eew_nagios.nagios.models import NagiosPerformance
@@ -85,11 +85,15 @@ def main(
     # Get the current time to use as the end_time of the availability query
     # and to compare timestamps to for latency values
     end_time = datetime.now()
+    start_time = end_time - timedelta(hours=1)
+    url = availability_health.assemble_url('localhost', start_time, end_time)
+
+    availability = availability_health.get_availability_json(url)
 
     # Get the channel_latency objects and list of unavailable channels
     acquisition_statistics = \
         availability_health.get_channel_availability(
-            apollo_ip="localhost",
+            availability=availability,
             end_time=end_time)
 
     # Calculate percentage of channels that are available

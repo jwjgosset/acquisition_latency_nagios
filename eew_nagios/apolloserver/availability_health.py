@@ -6,8 +6,7 @@ from dataclasses import dataclass
 import requests
 import logging
 from typing import Dict, List
-from datetime import datetime, timedelta
-from requests import HTTPError
+from datetime import datetime
 from eew_nagios.nagios.models import NagiosOutputCode, NagiosRange
 from eew_nagios.nagios.acquision_availability import LatencyCheckResults
 
@@ -118,7 +117,7 @@ def get_availability_json(
 
 
 def get_channel_availability(
-    apollo_ip: str,
+    availability: Dict,
     end_time: datetime
 ) -> AcquisionStatistics:
     '''
@@ -142,16 +141,6 @@ def get_channel_availability(
     KeyError: If the json-formatted data does not contain the expected keys
 
     '''
-    start_time = end_time - timedelta(hours=1)
-    url = assemble_url(apollo_ip, start_time, end_time)
-
-    try:
-        availability = get_availability_json(url)
-    except HTTPError as e:
-        raise e
-    except ValueError as e:
-        raise e
-
     channel_latency: List[ChannelLatency] = []
     unavailable_channels: List[str] = []
 

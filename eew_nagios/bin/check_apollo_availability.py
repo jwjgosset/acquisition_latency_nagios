@@ -1,6 +1,6 @@
 from eew_nagios.apolloserver import availability_health  # type: ignore
 from datetime import datetime, timedelta
-from eew_nagios.nagios import acquision_availability
+from eew_nagios import acquision_availability
 from eew_nagios.config import LogLevels
 from eew_nagios.nagios.models import NagiosPerformance
 from typing import List, Optional

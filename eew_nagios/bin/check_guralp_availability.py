@@ -1,6 +1,6 @@
 import logging
 from eew_nagios.guralpdatacenter import guralp_availability
-from eew_nagios.nagios import acquision_availability
+from eew_nagios import acquision_availability
 import sys
 from datetime import datetime
 import click

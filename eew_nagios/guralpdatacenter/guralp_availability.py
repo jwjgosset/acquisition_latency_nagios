@@ -4,7 +4,7 @@ import pathlib
 import logging
 from dataclasses import dataclass
 from eew_nagios.nagios.models import NagiosRange, NagiosOutputCode
-from eew_nagios.nagios.acquision_availability import LatencyCheckResults
+from eew_nagios.acquision_availability import LatencyCheckResults
 
 
 @dataclass
@@ -34,9 +34,10 @@ def get_channel_latency(
 
     channel_latency: List[ChannelLatency] = []
 
-    cache_path = pathlib.Path(f"{cache_folder}/latency/")
+    cache_path = pathlib.Path(cache_folder).joinpath('latency')
+    print(cache_path)
 
-    latency_files = list(cache_path.glob("*_*_00_HN?_*.csv"))
+    latency_files = list(cache_path.glob("*_*_*_HN?_*_*.csv"))
 
     logging.debug(f"Latency files found: {latency_files}")
 
@@ -45,7 +46,9 @@ def get_channel_latency(
     for lat_file in latency_files:
 
         channel_latency.append(
-            get_latencystatistics_of_last_row(lat_file, time))
+            get_latencystatistics_of_last_row(
+                csv_file=lat_file,
+                time=time))
 
     return AcquisitionStatistics(channel_latency)
 

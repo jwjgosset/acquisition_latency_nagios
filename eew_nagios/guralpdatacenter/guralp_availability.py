@@ -1,44 +1,61 @@
-from eew_nagios.nagios import nagios_api
 from typing import List
 from datetime import datetime, timedelta
 import pathlib
 import logging
+from dataclasses import dataclass
+from eew_nagios.nagios.models import NagiosRange, NagiosOutputCode
+from eew_nagios.acquisition_availability import LatencyCheckResults
 
 
-def get_fortimus(
-    nagios_ip: str,
-    api_key: str
-) -> List:
+@dataclass
+class ChannelLatency:
+    channel: str
+    timestamp: datetime
+    latency: float
+
+
+@dataclass
+class AcquisitionStatistics:
+    channel_latency: List[ChannelLatency]
+
+
+def get_channel_latency(
+    cache_folder: str,
+    time: datetime
+) -> AcquisitionStatistics:
     '''
-    ######DEPRECATED#######
-    Function to get a list of all members of the digitizer-fortimus hostgroup
-    from Nagios
+    cache_folder: str
+        The folder where the Guralp Datacenter stores cached miniseed, soh and
+        latency files
 
-    Parameters
-    ----------
-    nagios_ip: str
-        The IP address of the Nagios XI server
-
-    api_key: str
-        The api key to use to query the Nagios XI server
-
-    Returns
-    -------
-    List: List of dictionaries containing each fortimus's host name and unique
-    ID in Nagios
+    time: datetime
+        Datetime object representing the current time
     '''
-    fortimus_list = nagios_api.fetch_hostgroup_members(
-        hostgroup_name='digitizer-fortimus',
-        nagios_ip=nagios_ip,
-        api_key=api_key
-    )
-    return fortimus_list
+
+    channel_latency: List[ChannelLatency] = []
+
+    cache_path = pathlib.Path(cache_folder).joinpath('latency')
+    print(cache_path)
+
+    latency_files = list(cache_path.glob("*_*_*_HN?_*_*.csv"))
+
+    logging.debug(f"Latency files found: {latency_files}")
+
+    logging.debug(f"Current time: {time}")
+
+    for lat_file in latency_files:
+
+        channel_latency.append(
+            get_latencystatistics_of_last_row(
+                csv_file=lat_file,
+                time=time))
+
+    return AcquisitionStatistics(channel_latency)
 
 
 def check_availability(
     expected_channels: int,
-    cache_folder: str,
-    time: datetime
+    found_channels: int
 ) -> float:
     '''
     Determines the percentage of expected channels that have actually arrived
@@ -49,44 +66,20 @@ def check_availability(
     expectedchannels: int
         The number of expected channels
 
-    cache_folder: str
-        The folder where the Guralp Datacenter stores cached miniseed, soh and
-        latency files
-
-    time: datetime
-        Datetime object representing the current time
-
     Returns
     -------
     float: The percentage of expected channels that have actually arrived in
     the last hour
     '''
-    available_channels = 0
-
-    cache_path = pathlib.Path(f"{cache_folder}/latency/")
-
-    latency_files = list(cache_path.glob("*_*_00_HN?_*.csv"))
-
-    logging.debug(f"Latency files found: {latency_files}")
-
-    logging.debug(f"Current time: {time}")
-
-    for lat_file in latency_files:
-        timestamp = get_timestamp_of_last_row(lat_file)
-
-        logging.debug(f"Last timetamp of {lat_file}: {timestamp}")
-
-        if timestamp > time - timedelta(hours=1):
-            available_channels += 1
-
-    percent_available = (available_channels / expected_channels) * 100
+    percent_available = (found_channels / expected_channels) * 100
 
     return percent_available
 
 
-def get_timestamp_of_last_row(
-    csv_file: pathlib.Path
-) -> datetime:
+def get_latencystatistics_of_last_row(
+    csv_file: pathlib.Path,
+    time: datetime
+) -> ChannelLatency:
     '''
     Reads a CSV file of latency information and returns the timestamp for the
     last entry
@@ -104,8 +97,83 @@ def get_timestamp_of_last_row(
     f = open(csv_file, "r", encoding="utf-8", errors="ignore")
     last_line = f.readlines()[-1]
 
-    time_string = last_line.split(',')[0]
+    line = last_line.split(',')
 
-    timestamp = datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S.%f")
+    time_string = line[0]
 
-    return timestamp
+    channel_name = line[1]
+
+    network_latency = float(line[2])
+
+    timestamp = (datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S.%f") -
+                 timedelta(seconds=network_latency))
+
+    latency = (time - timestamp).total_seconds()
+
+    if latency < 0:
+        latency = 0
+
+    return ChannelLatency(channel_name, timestamp, latency)
+
+
+def get_latency_threshold_state(
+    acquisition_stats: AcquisitionStatistics,
+    warn_time: str,
+    crit_time: str,
+    warn_threshold: str,
+    crit_threshold: str
+) -> LatencyCheckResults:
+    '''
+    Get a set of Nagios check results based on the provided latency thresholds
+
+    Parameters
+    ----------
+    acquisition_stats: AcquisitionStatistics
+        Object containing a list of station latency statistics
+
+    warn_time: str
+        The latency threshold used to count channels that contribute to the
+        warning threshold
+
+    crit_time: str
+        The latency threshold used to count channels that contribute to the
+        critical threshold
+
+    warn_threshold: str
+        The number of channels that need to fail the warn_time threshold to
+        create a warning state
+
+    crit_threshold: str
+        The number of channels that need to fail the crit_time threshold to
+        create a critical state
+
+    Returns
+    -------
+    LatencyCheckResults:
+        Object containing the count of channels within the warning threshold,
+        critical threshold, and the Nagios state
+
+    '''
+    crit_count = 0
+    warn_count = 0
+
+    # Count the channels within the critical and warning thresholds
+
+    for channel in acquisition_stats.channel_latency:
+        if NagiosRange(crit_time).in_range(channel.latency):
+            crit_count += 1
+        elif NagiosRange(warn_time).in_range(channel.latency):
+            warn_count += 1
+
+    # Channels that don't have latency statistics for the past hour should
+    # also count as critical
+
+    if NagiosRange(crit_threshold).in_range(crit_count):
+        state = NagiosOutputCode.critical
+    # Critical channels should also count towards the warning threshold
+    elif NagiosRange(warn_threshold).in_range((warn_count+crit_count)):
+        state = NagiosOutputCode.warning
+    else:
+        state = NagiosOutputCode.ok
+
+    return LatencyCheckResults(crit_count, warn_count, state)

@@ -6,10 +6,9 @@ from dataclasses import dataclass
 import requests
 import logging
 from typing import Dict, List
-from datetime import datetime, timedelta
-from requests import HTTPError
-
+from datetime import datetime
 from eew_nagios.nagios.models import NagiosOutputCode, NagiosRange
+from eew_nagios.acquisition_availability import LatencyCheckResults
 
 
 @dataclass
@@ -23,13 +22,6 @@ class ChannelLatency:
 class AcquisionStatistics:
     channel_latency: List[ChannelLatency]
     unavailable_channels: List[str]
-
-
-@dataclass
-class LatencyCheckResults:
-    crit_count: int
-    warn_count: int
-    state: NagiosOutputCode
 
 
 def get_latency(
@@ -125,30 +117,30 @@ def get_availability_json(
 
 
 def get_channel_availability(
-    apollo_ip: str,
+    availability: Dict,
     end_time: datetime
 ) -> AcquisionStatistics:
     '''
-    Return a list of available channels for the time range. Available
-    channels are those which appear in the Availability json and are not empty
+    Parameters
+    ----------
+    apollo_ip: str
+        The address of the apollo server to query for availability statistics
 
+    end_time: datetime
+        The time to use to determine the time range to query for, as well as
+         compare timestamps to to calculate latency
 
+    Returns
+    -------
+    AquisitionStatistics
+        Object containing list of ChannelLatency objects, and a list of
+        channels with no availability information
 
     Raises
     ------
     KeyError: If the json-formatted data does not contain the expected keys
 
     '''
-    start_time = end_time - timedelta(hours=1)
-    url = assemble_url(apollo_ip, start_time, end_time)
-
-    try:
-        availability = get_availability_json(url)
-    except HTTPError as e:
-        raise e
-    except ValueError as e:
-        raise e
-
     channel_latency: List[ChannelLatency] = []
     unavailable_channels: List[str] = []
 
@@ -164,8 +156,11 @@ def get_channel_availability(
 
                 latency = get_latency(end_time, last_time)
 
-                channel_latency.extend([ChannelLatency(channel["id"],
-                                        last_time, latency)])
+                if latency < 0:
+                    latency = 0
+
+                channel_latency.append(ChannelLatency(channel["id"],
+                                       last_time, latency))
 
         return AcquisionStatistics(channel_latency, unavailable_channels)
 
@@ -218,9 +213,41 @@ def get_latency_threshold_state(
     warn_threshold: str,
     crit_threshold: str
 ) -> LatencyCheckResults:
+    '''
+    Get a set of Nagios check results based on the provided latency thresholds
 
+    Parameters
+    ----------
+    acquisition_stats: AcquisitionStatistics
+        Object containing a list of station latency statistics
+
+    warn_time: str
+        The latency threshold used to count channels that contribute to the
+        warning threshold
+
+    crit_time: str
+        The latency threshold used to count channels that contribute to the
+        critical threshold
+
+    warn_threshold: str
+        The number of channels that need to fail the warn_time threshold to
+        create a warning state
+
+    crit_threshold: str
+        The number of channels that need to fail the crit_time threshold to
+        create a critical state
+
+    Returns
+    -------
+    LatencyCheckResults:
+        Object containing the count of channels within the warning threshold,
+        critical threshold, and the Nagios state
+
+    '''
     crit_count = 0
     warn_count = 0
+
+    # Count the channels within the critical and warning thresholds
 
     for channel in acquisition_stats.channel_latency:
         if NagiosRange(crit_time).in_range(channel.latency):
@@ -228,10 +255,13 @@ def get_latency_threshold_state(
         elif NagiosRange(warn_time).in_range(channel.latency):
             warn_count += 1
 
+    # Channels that don't have latency statistics for the past hour should
+    # also count as critical
     crit_count += len(acquisition_stats.unavailable_channels)
 
     if NagiosRange(crit_threshold).in_range(crit_count):
         state = NagiosOutputCode.critical
+    # Critical channels should also count towards the warning threshold
     elif NagiosRange(warn_threshold).in_range((warn_count+crit_count)):
         state = NagiosOutputCode.warning
     else:

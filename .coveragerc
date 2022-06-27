@@ -1,0 +1,12 @@
+[run]
+omit = 
+        *eew_nagios/bin/check_apollo_availability.py*
+        *eew_nagios/bin/check_guralp_availability.py*
+        *eew_nagios/bin/__init__.py*
+
+        *eew_nagios/nagios/**
+
+        *eew_nagios/data/**
+        *eew_nagios/config.py*
+
+        *eew_nagios/titansma/**

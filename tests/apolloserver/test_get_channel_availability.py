@@ -1,5 +1,5 @@
 from datetime import datetime
-from eew_nagios.apolloserver.availability_health import \
+from acquisition_nagios.apolloserver.availability_health import \
     get_channel_availability
 import pytest
 

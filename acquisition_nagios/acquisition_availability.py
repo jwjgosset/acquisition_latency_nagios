@@ -1,5 +1,5 @@
-from eew_nagios.nagios.models import NagiosPerformance, NagiosOutputCode, \
-    NagiosRange, NagiosResult, NagiosVerbose
+from acquisition_nagios.nagios.models import NagiosPerformance, \
+    NagiosOutputCode, NagiosRange, NagiosResult, NagiosVerbose
 from typing import List
 from dataclasses import dataclass
 

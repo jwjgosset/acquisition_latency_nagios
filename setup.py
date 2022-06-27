@@ -2,7 +2,7 @@ from setuptools import setup  # type: ignore
 from setuptools import find_packages
 
 setup(
-    name='eew_nagios',
+    name='acquisition_nagios',
     version='1.2.1',
     description=('Custom Nagios Plugins to check EEW Aquisionion servers ' +
                  'and Instruments'),
@@ -10,7 +10,7 @@ setup(
     author_email='jonathan.gosset@nrcan-rncan.gc.ca',
     packages=find_packages(exclude=('tests')),
     package_data={
-        'eew_nagios': [
+        'acquisition_nagios': [
             'data/*.config'
         ]
     },
@@ -30,9 +30,9 @@ setup(
     entry_points={
         'console_scripts': [
             'check_apollo_availability = \
-                eew_nagios.bin.check_apollo_availability:main',
+                acquisition_nagios.bin.check_apollo_availability:main',
             'check_guralp_availability = \
-                eew_nagios.bin.check_guralp_availability:main'
+                acquisition_nagios.bin.check_guralp_availability:main'
         ]
     }
 )

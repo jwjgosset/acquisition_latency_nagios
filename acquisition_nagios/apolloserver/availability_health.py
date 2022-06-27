@@ -7,8 +7,8 @@ import requests
 import logging
 from typing import Dict, List
 from datetime import datetime
-from eew_nagios.nagios.models import NagiosOutputCode, NagiosRange
-from eew_nagios.acquisition_availability import LatencyCheckResults
+from acquisition_nagios.nagios.models import NagiosOutputCode, NagiosRange
+from acquisition_nagios.acquisition_availability import LatencyCheckResults
 
 
 @dataclass

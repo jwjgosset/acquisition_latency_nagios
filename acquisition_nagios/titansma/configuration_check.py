@@ -1,7 +1,7 @@
 from io import FileIO
-from eew_nagios.nagios import nagios_api
+from acquisition_nagios.nagios import nagios_api
 from typing import List, Tuple, Union
-from eew_nagios.titansma import digitizer_interface
+from acquisition_nagios.titansma import digitizer_interface
 # import pathlib
 
 

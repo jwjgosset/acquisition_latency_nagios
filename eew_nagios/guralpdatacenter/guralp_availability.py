@@ -35,7 +35,6 @@ def get_channel_latency(
     channel_latency: List[ChannelLatency] = []
 
     cache_path = pathlib.Path(cache_folder).joinpath('latency')
-    print(cache_path)
 
     latency_files = list(cache_path.glob("*_*_*_HN?_*_*.csv"))
 

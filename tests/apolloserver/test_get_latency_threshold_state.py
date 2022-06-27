@@ -1,6 +1,6 @@
-from eew_nagios.apolloserver.availability_health import AcquisionStatistics, \
+from acquisition_nagios.apolloserver.availability_health import AcquisionStatistics, \
     ChannelLatency, get_latency_threshold_state, LatencyCheckResults
-from eew_nagios.nagios.models import NagiosOutputCode
+from acquisition_nagios.nagios.models import NagiosOutputCode
 from datetime import datetime
 
 

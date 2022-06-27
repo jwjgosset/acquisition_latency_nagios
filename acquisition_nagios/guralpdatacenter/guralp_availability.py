@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 import pathlib
 import logging
 from dataclasses import dataclass
-from eew_nagios.nagios.models import NagiosRange, NagiosOutputCode
-from eew_nagios.acquisition_availability import LatencyCheckResults
+from acquisition_nagios.nagios.models import NagiosRange, NagiosOutputCode
+from acquisition_nagios.acquisition_availability import LatencyCheckResults
 
 
 @dataclass

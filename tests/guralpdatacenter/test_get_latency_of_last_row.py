@@ -1,4 +1,4 @@
-from eew_nagios.guralpdatacenter.guralp_availability import \
+from acquisition_nagios.guralpdatacenter.guralp_availability import \
     get_latencystatistics_of_last_row
 from tests import TESTDATA
 from pathlib import Path

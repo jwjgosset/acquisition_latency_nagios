@@ -1,5 +1,5 @@
 from datetime import datetime
-from eew_nagios.apolloserver.availability_health import get_latency
+from acquisition_nagios.apolloserver.availability_health import get_latency
 
 
 def test_get_latency():

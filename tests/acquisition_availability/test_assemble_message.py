@@ -1,5 +1,5 @@
-from eew_nagios.acquisition_availability import assemble_message
-from eew_nagios.nagios.models import NagiosOutputCode, NagiosPerformance
+from acquisition_nagios.acquisition_availability import assemble_message
+from acquisition_nagios.nagios.models import NagiosOutputCode, NagiosPerformance
 
 
 def test_assemble_message_ok():

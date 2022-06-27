@@ -1,4 +1,4 @@
-from eew_nagios.apolloserver.availability_health import \
+from acquisition_nagios.apolloserver.availability_health import \
     check_availability_percentage
 import pytest
 

@@ -1,4 +1,4 @@
-from eew_nagios.guralpdatacenter.guralp_availability import check_availability
+from acquisition_nagios.guralpdatacenter.guralp_availability import check_availability
 import pytest
 
 

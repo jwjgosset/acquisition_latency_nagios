@@ -1,7 +1,7 @@
-from eew_nagios.guralpdatacenter.guralp_availability import \
+from acquisition_nagios.guralpdatacenter.guralp_availability import \
     AcquisitionStatistics, ChannelLatency, get_latency_threshold_state, \
     LatencyCheckResults
-from eew_nagios.nagios.models import NagiosOutputCode
+from acquisition_nagios.nagios.models import NagiosOutputCode
 from datetime import datetime
 
 

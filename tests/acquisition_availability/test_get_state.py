@@ -1,5 +1,5 @@
-from eew_nagios.acquisition_availability import get_state
-from eew_nagios.nagios.models import NagiosOutputCode
+from acquisition_nagios.acquisition_availability import get_state
+from acquisition_nagios.nagios.models import NagiosOutputCode
 
 
 def test_get_state():

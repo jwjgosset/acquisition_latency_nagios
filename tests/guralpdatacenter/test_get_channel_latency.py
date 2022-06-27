@@ -1,4 +1,5 @@
-from eew_nagios.guralpdatacenter.guralp_availability import get_channel_latency
+from acquisition_nagios.guralpdatacenter.guralp_availability import \
+    get_channel_latency
 from tests import TESTDATA
 from datetime import datetime
 

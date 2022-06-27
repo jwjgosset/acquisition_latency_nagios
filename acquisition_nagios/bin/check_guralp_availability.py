@@ -1,12 +1,12 @@
 import logging
-from eew_nagios.guralpdatacenter import guralp_availability
-from eew_nagios import acquisition_availability
+from acquisition_nagios.guralpdatacenter import guralp_availability
+from acquisition_nagios import acquisition_availability
 import sys
 from datetime import datetime
 import click
-from eew_nagios.config import LogLevels
+from acquisition_nagios.config import LogLevels
 from typing import Optional, List
-from eew_nagios.nagios.models import NagiosPerformance
+from acquisition_nagios.nagios.models import NagiosPerformance
 
 
 @click.command()

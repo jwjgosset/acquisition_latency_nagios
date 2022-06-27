@@ -32,14 +32,14 @@ flake8:
   script:
     - *build
     - python -m pip install flake8
-    - flake8 eew_nagios
+    - flake8 acquisition_nagios
 
 mypy:
   stage: static code
   script:
     - *build
     - python -m pip install mypy
-    - mypy --install-type --non-interactive --ignore-missing-imports eew_nagios
+    - mypy --install-type --non-interactive --ignore-missing-imports acquisition_nagios
 
 pytest:
   stage: test

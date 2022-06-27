@@ -1,4 +1,4 @@
-from eew_nagios.apolloserver.availability_health import assemble_url
+from acquisition_nagios.apolloserver.availability_health import assemble_url
 from datetime import datetime
 
 

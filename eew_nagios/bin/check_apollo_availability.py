@@ -1,6 +1,6 @@
 from eew_nagios.apolloserver import availability_health  # type: ignore
 from datetime import datetime, timedelta
-from eew_nagios import acquision_availability
+from eew_nagios import acquisition_availability
 from eew_nagios.config import LogLevels
 from eew_nagios.nagios.models import NagiosPerformance
 from typing import List, Optional
@@ -106,7 +106,7 @@ def main(
                   ', '.join(acquisition_statistics.unavailable_channels))
 
     # Determine the state according to the percentage of available channels
-    state = acquision_availability.get_state(
+    state = acquisition_availability.get_state(
         percentage=percent,
         warn_threshold=warning,
         crit_threshold=critical)
@@ -161,7 +161,7 @@ def main(
         details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
                     f"({channel_lat.latency}s)\n")
 
-    message = acquision_availability.assemble_message(
+    message = acquisition_availability.assemble_message(
         state=state,
         percentage=percent,
         performances=performances,

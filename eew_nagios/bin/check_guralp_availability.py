@@ -1,6 +1,6 @@
 import logging
 from eew_nagios.guralpdatacenter import guralp_availability
-from eew_nagios import acquision_availability
+from eew_nagios import acquisition_availability
 import sys
 from datetime import datetime
 import click
@@ -105,7 +105,7 @@ def main(
     )
 
     # Determine the state based on this percentage
-    state = acquision_availability.get_state(
+    state = acquisition_availability.get_state(
         percentage=percent_available,
         warn_threshold=warning,
         crit_threshold=critical)
@@ -156,7 +156,7 @@ def main(
         details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
                     f"({channel_lat.latency}s)\n")
 
-    message = acquision_availability.assemble_message(
+    message = acquisition_availability.assemble_message(
         state=state,
         percentage=percent_available,
         performances=performances,

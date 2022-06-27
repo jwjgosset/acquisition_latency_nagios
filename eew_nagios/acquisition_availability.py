@@ -1,4 +1,3 @@
-from eew_nagios.nagios import nrdp
 from eew_nagios.nagios.models import NagiosPerformance, NagiosOutputCode, \
     NagiosRange, NagiosResult, NagiosVerbose
 from typing import List
@@ -60,42 +59,6 @@ def assemble_message(
     )
 
     return result
-
-
-def prepare_check_results(
-    host_name: str,
-    state: int,
-    output: str
-) -> nrdp.NagiosCheckResult:
-    '''
-    Assemble check results into a format that the NRDP API for Nagios can
-    ingest
-
-    Parameters
-    ----------
-    host_name: str
-        The host name for the aquision server as it is configured in Nagios
-
-    state: int
-        The integer representation of the service's state. 0=OK, 1=WARNING,
-        2=CRITICAL, 3=UNKNOWN
-
-    output: str
-        The message to display in Nagios beside the service, including
-        performance data
-
-    Returns
-    -------
-    NagiosCheckResult: Object used to package check results in a way that the
-    Nagios NRDP API can ingest
-    '''
-    check_result = nrdp.NagiosCheckResult(
-        hostname=host_name,
-        servicename="Channels available in last hour",
-        state=state,
-        output=output
-    )
-    return check_result
 
 
 def get_state(

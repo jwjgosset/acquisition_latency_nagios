@@ -257,7 +257,9 @@ def get_latency_threshold_state(
 
     # Channels that don't have latency statistics for the past hour should
     # also count as critical
-    crit_count += len(acquisition_stats.unavailable_channels)
+    # Removing this because of all the channels that have been tested
+    # pre-deplpoyment but are not deployed. Maybe re-add later
+    # crit_count += len(acquisition_stats.unavailable_channels)
 
     if NagiosRange(crit_threshold).in_range(crit_count):
         state = NagiosOutputCode.critical

@@ -145,9 +145,16 @@ def main(
         warning=float(warning_count)
     ))
 
-    details = ("Channels more than 1 hour old: " +
-               f"{len(acquisition_statistics.unavailable_channels)}\n")
+    details = ("Stale channels: " +
+               f"{len(acquisition_statistics.unavailable_channels)}, ")
 
+    details += (f"Channels above with latency above {warning_time}: " +
+                f"{latency_results.warn_count}, ")
+
+    details += (f"Channels above with latency above {critical_time}: " +
+                f"{latency_results.crit_count}\n")
+
+    details += "Stale: \n"
     for channel in acquisition_statistics.unavailable_channels:
         details += f"{channel} "
 

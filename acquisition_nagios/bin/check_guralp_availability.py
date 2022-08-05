@@ -144,7 +144,15 @@ def main(
     missing_channels = int(expected_channels) - len(
         acquisition_statistics.channel_latency)
 
-    details = (f"Channels missing from cache folder: {missing_channels}")
+    details = (f"Stale channels: {missing_channels}, ")
+
+    details += (f"Channels with latency over {warning_time}: ")
+
+    details += (f"{latency_results.warn_count}, ")
+
+    details += (f"Channels with latency over {critical_time}: ")
+
+    details += (f"{latency_results.crit_count}")
 
     details += "\n\nChannels sorted by latency: \n"
 

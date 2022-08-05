@@ -146,11 +146,11 @@ def main(
 
     details = (f"Stale channels: {missing_channels}, ")
 
-    details += (f"Channels with latency over {warning_time}: ")
+    details += (f"Channels with latency over {warning_time}s: ")
 
     details += (f"{latency_results.warn_count}, ")
 
-    details += (f"Channels with latency over {critical_time}: ")
+    details += (f"Channels with latency over {critical_time}s: ")
 
     details += (f"{latency_results.crit_count}")
 

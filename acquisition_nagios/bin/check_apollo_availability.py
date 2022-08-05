@@ -148,10 +148,10 @@ def main(
     details = ("Stale channels: " +
                f"{len(acquisition_statistics.unavailable_channels)}, ")
 
-    details += (f"Channels above with latency above {warning_time}: " +
+    details += (f"Channels above with latency above {warning_time}s: " +
                 f"{latency_results.warn_count}, ")
 
-    details += (f"Channels above with latency above {critical_time}: " +
+    details += (f"Channels above with latency above {critical_time}s: " +
                 f"{latency_results.crit_count}\n")
 
     details += "Stale: \n"

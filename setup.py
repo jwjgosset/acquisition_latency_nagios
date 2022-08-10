@@ -3,7 +3,7 @@ from setuptools import find_packages
 
 setup(
     name='acquisition_nagios',
-    version='1.3.0',
+    version='1.3.1',
     description=('Custom Nagios Plugins to check EEW Aquisionion servers ' +
                  'and Instruments'),
     author='Jonathan Gosset',

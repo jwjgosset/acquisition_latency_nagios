@@ -14,8 +14,8 @@ def test_get_latencystatistics_of_last_row():
         time=time
     )
     assert result_latency.channel == "QW.BCH09.00.HNE"
-    assert result_latency.latency == 2.6
-    assert result_latency.timestamp == datetime(2022, 6, 1, 23, 59, 58, 400000)
+    assert result_latency.latency == 3.6
+    assert result_latency.timestamp == datetime(2022, 6, 1, 23, 59, 57, 400000)
 
     time = datetime(2022, 6, 1, 0, 0, 0)
     result_latency = get_latencystatistics_of_last_row(

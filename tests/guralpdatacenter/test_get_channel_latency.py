@@ -6,7 +6,7 @@ from datetime import datetime
 
 def test_get_channel_latency():
     cache_folder: str = TESTDATA
-    time = datetime(2022, 6, 2, 0, 0, 0)
+    time = datetime(2022, 6, 1, 23, 59, 59)
     test_statistics = get_channel_latency(
         cache_folder=cache_folder,
         time=time

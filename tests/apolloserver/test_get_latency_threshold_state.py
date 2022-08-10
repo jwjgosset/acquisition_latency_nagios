@@ -1,5 +1,6 @@
-from acquisition_nagios.apolloserver.availability_health import AcquisionStatistics, \
-    ChannelLatency, get_latency_threshold_state, LatencyCheckResults
+from acquisition_nagios.apolloserver.availability_health import \
+    AcquisionStatistics, ChannelLatency, get_latency_threshold_state, \
+    LatencyCheckResults
 from acquisition_nagios.nagios.models import NagiosOutputCode
 from datetime import datetime
 
@@ -69,10 +70,10 @@ def test_get_latency_threshold_state():
         warn_time='3',
         crit_time='6',
         warn_threshold='1',
-        crit_threshold='2'
+        crit_threshold='1'
     )
     assert resulting_state == LatencyCheckResults(
-        crit_count=3,
+        crit_count=1,
         warn_count=1,
-        state=NagiosOutputCode.critical
+        state=NagiosOutputCode.warning
     )

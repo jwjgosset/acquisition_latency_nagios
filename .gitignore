@@ -23,3 +23,5 @@ __pycache__
 
 # Ignore config file
 *.config
+
+.coverage

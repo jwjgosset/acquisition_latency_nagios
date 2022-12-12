@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from acquisition_nagios.nagios.models import NagiosRange, NagiosOutputCode
 from acquisition_nagios.acquisition_availability import LatencyCheckResults
+from subprocess import Popen, PIPE
 
 
 @dataclass
@@ -17,6 +18,56 @@ class ChannelLatency:
 @dataclass
 class AcquisitionStatistics:
     channel_latency: List[ChannelLatency]
+#    unavailable_channels: List[str]
+
+
+def get_expected_channels(
+    gdc_address: str = "localhost",
+    seedlink_port: str = "18000"
+) -> List[str]:
+    '''
+    Returns a list of channels that the acquisition server is expecting using
+    slinktool
+
+    Parameters
+    ----------
+    gdc_address: str
+        The IP address or hostname of the acqusition server. Because this
+        nagios plugin is expected to run on the Guralp Datacenter, the default
+        is localhost
+
+    seedlink_port: str
+        The port that the seedlink server is hosted on. Default: 18000
+
+    Returns: List[str]
+        List of expected channels, in the format NN.SSSSS.LL.CCC
+    '''
+
+    # Use -Q option with slinktool to get a list of each individual channel
+    cmd = ['slinktool', '-Q', f"{gdc_address}:{seedlink_port}"]
+    process = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+
+    # Log any error using slinktool
+    if stderr != b'':
+        logging.error(f"Slinktool error: {stderr.decode('utf-8')}")
+
+    # Decode and split the stdout lines
+    outlines = stdout.decode('utf-8').split('\n')
+
+    expected_channels: List = []
+
+    for line in outlines:
+        line_parts = line.split(' ')
+
+        # Less than 3 parts means that an entire SNCL is not present
+        if len(line_parts) > 3:
+            # Only record channel names for seismic data
+            if line_parts[3] in ['HNZ', 'HNN', 'HNE', 'HHZ', 'HHN', 'HHE']:
+                channel = (f"{line_parts[0]}.{line_parts[1]}.{line_parts[2]}" +
+                           f".{line_parts[3]}")
+                expected_channels.append(channel)
+    return expected_channels
 
 
 def get_channel_latency(

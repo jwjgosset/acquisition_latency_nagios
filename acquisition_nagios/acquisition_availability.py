@@ -48,7 +48,7 @@ def assemble_message(
         statetxt = 'UNKNOWN'
 
     percent = '%.2f' % percentage
-    info = f'{statetxt}: {percent}% of expected channels available'
+    info = f'{statetxt}: {percent}% of expected channels available. '
 
     result = NagiosResult(
         summary=info,
@@ -57,7 +57,6 @@ def assemble_message(
         performances=performances,
         details=details
     )
-
     return result
 
 

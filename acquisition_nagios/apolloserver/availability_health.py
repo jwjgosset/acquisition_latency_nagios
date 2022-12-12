@@ -270,3 +270,41 @@ def get_latency_threshold_state(
         state = NagiosOutputCode.ok
 
     return LatencyCheckResults(crit_count, warn_count, state)
+
+
+def assemble_details(
+    acquisition_statistics: AcquisionStatistics,
+    warning_time: str,
+    critical_time: str
+) -> str:
+
+    stale_details = "Stale channels:\n"
+
+    crit_details = f"\nChannels above with latency above {critical_time}s:\n"
+
+    warn_details = f"\nChannels above with latency above {warning_time}s:\n"
+
+    ok_details = "\nChannels with good latency:\n"
+
+    for channel in acquisition_statistics.unavailable_channels:
+        stale_details += f"{channel} "
+
+    acquisition_statistics.channel_latency.sort(
+        key=lambda x: x.latency,
+        reverse=True)
+
+    # Sort latency statistics by threshold for display
+    for stats in acquisition_statistics.channel_latency:
+        if NagiosRange(critical_time).in_range(stats.latency):
+            crit_details += (f"{stats.channel} {stats.timestamp} " +
+                             f"{stats.latency}s\n")
+        elif NagiosRange(warning_time).in_range(stats.latency):
+            warn_details += (f"{stats.channel} {stats.timestamp} " +
+                             f"{stats.latency}s\n")
+        else:
+            ok_details += (f"{stats.channel} {stats.timestamp} " +
+                           f"{stats.latency}s\n")
+
+    details = stale_details + crit_details + warn_details + ok_details
+
+    return details

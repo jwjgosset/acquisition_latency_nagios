@@ -145,28 +145,11 @@ def main(
         warning=float(warning_count)
     ))
 
-    details = ("Stale channels: " +
-               f"{len(acquisition_statistics.unavailable_channels)}, ")
-
-    details += (f"Channels above with latency above {warning_time}s: " +
-                f"{latency_results.warn_count}, ")
-
-    details += (f"Channels above with latency above {critical_time}s: " +
-                f"{latency_results.crit_count}\n")
-
-    details += "Stale: \n"
-    for channel in acquisition_statistics.unavailable_channels:
-        details += f"{channel} "
-
-    details += "\n\nChannels sorted by latency: \n"
-
-    acquisition_statistics.channel_latency.sort(
-        key=lambda x: x.latency,
-        reverse=True)
-
-    for channel_lat in acquisition_statistics.channel_latency:
-        details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
-                    f"({channel_lat.latency}s)\n")
+    details = availability_health.assemble_details(
+        acquisition_statistics=acquisition_statistics,
+        warning_time=warning_time,
+        critical_time=critical_time
+    )
 
     message = acquisition_availability.assemble_message(
         state=state,

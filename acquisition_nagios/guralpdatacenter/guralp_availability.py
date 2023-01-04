@@ -85,13 +85,13 @@ def get_channel_latency(
 
     # Use year and jday from current time to ensure that old files aren't read
     year = time.year
-    jday = time.strftime('%j')
+    jday = time.strftime('%-j')
 
     channel_latency: List[ChannelLatency] = []
 
     cache_path = pathlib.Path(cache_folder).joinpath('latency')
 
-    latency_files = list(cache_path.glob(f"*_*_*_HN?_{year}_{jday}.csv"))
+    latency_files = list(cache_path.glob(f"*_*_*_H??_{year}_{jday}.csv"))
 
     logging.debug(f"Latency files found: {latency_files}")
 

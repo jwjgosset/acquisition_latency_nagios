@@ -18,7 +18,8 @@ setup(
     # Requires python packages
     install_requires=[
         'requests',
-        'click'
+        'click',
+        'dataclasses'
     ],
     extras_require={
         'dev': [

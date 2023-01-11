@@ -50,7 +50,7 @@ def get_latency(
     -------
     float: The latency in seconds
     '''
-    start_time = end_time - timedelta(minutes=1)
+    start_time = end_time - timedelta(minutes=5)
 
     api_url = assemble_arrival_url(
         server_url=server_url,

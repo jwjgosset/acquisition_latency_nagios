@@ -50,7 +50,7 @@ def get_latency(
     -------
     float: The latency in seconds
     '''
-    start_time = end_time - timedelta(minutes=5)
+    start_time = end_time - timedelta(minutes=1)
 
     api_url = assemble_arrival_url(
         server_url=server_url,
@@ -200,7 +200,7 @@ def get_channel_availability(
                                               '%Y-%m-%dT%H:%M:%S.%f000Z')
 
                 latency = get_latency(
-                    end_time=end_time,
+                    end_time=last_time,
                     server_url=server_url,
                     sncl=channel["id"]
                 )

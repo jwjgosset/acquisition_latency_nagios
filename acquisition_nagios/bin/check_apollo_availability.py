@@ -95,7 +95,8 @@ def main(
     acquisition_statistics = \
         availability_health.get_channel_availability(
             availability=availability,
-            end_time=end_time)
+            end_time=end_time,
+            server_url="localhost")
 
     # Calculate percentage of channels that are available
     percent = availability_health.check_availability_percentage(

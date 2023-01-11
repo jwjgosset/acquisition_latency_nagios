@@ -1,4 +1,5 @@
-from acquisition_nagios.apolloserver.availability_health import assemble_url
+from acquisition_nagios.apolloserver.availability_health import \
+    assemble_availability_url
 from datetime import datetime
 
 
@@ -10,7 +11,7 @@ def test_assemble_url():
     expected_url = ("http://localhost:8787/api/v1/channels/availability" +
                     ".json?type=timeseries&startTime=2022-06-01T00:00:00." +
                     "000Z&endTime=2022-06-01T01:00:00.000Z")
-    assert assemble_url(
+    assert assemble_availability_url(
         server_url=server_url,
         start_time=start_time,
         end_time=end_time

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import requests
 import logging
 from typing import Dict, List
-from datetime import datetime
+from datetime import datetime, timedelta
 from acquisition_nagios.nagios.models import NagiosOutputCode, NagiosRange
 from acquisition_nagios.acquisition_availability import LatencyCheckResults
 
@@ -25,8 +25,9 @@ class AcquisionStatistics:
 
 
 def get_latency(
-    current_time: datetime,
-    last_time: datetime,
+    end_time: datetime,
+    server_url: str,
+    sncl: str
 ) -> float:
     '''
     Determine a latency value based on the two provided timestamps
@@ -43,15 +44,30 @@ def get_latency(
     -------
     float: The latency in seconds
     '''
-    latencydelta = current_time - last_time
+    start_time = end_time - timedelta(minutes=1)
 
-    return latencydelta.total_seconds()
+    api_url = assemble_arrival_url(
+        server_url=server_url,
+        start_time=start_time,
+        end_time=end_time,
+        sncl=sncl
+    )
+
+    latency_json = get_api_json(
+        query_url=api_url
+    )
+
+    latency = float(
+        latency_json['availability'][0]['intervals'][0]['latency']['average'])
+
+    return latency
 
 
-def assemble_url(
+def assemble_availability_url(
     server_url: str,
     start_time: datetime,
-    end_time: datetime
+    end_time: datetime,
+    port: str = '8787'
 ) -> str:
     '''
     Constucts the URL used to retrieve data from the Availability API
@@ -81,12 +97,31 @@ def assemble_url(
 
     option_url = f"?type=timeseries&{start_string}&{end_string}"
 
-    full_url = "http://" + server_url + ':8787' + api_url + option_url
-
+    full_url = "http://" + server_url + ':' + port + api_url + option_url
     return full_url
 
 
-def get_availability_json(
+def assemble_arrival_url(
+    server_url: str,
+    start_time: datetime,
+    end_time: datetime,
+    sncl: str,
+    port: str = '8787'
+):
+    start_string = f"startTime={start_time.strftime('%Y-%m-%dT%H:%M:%S.000Z')}"
+
+    end_string = f"endTime={end_time.strftime('%Y-%m-%dT%H:%M:%S.000Z')}"
+
+    api_url = "/api/v1/channels/availability/summary/intervals"
+
+    option_url = (f"?channels={sncl}&{start_string}&{end_string}" +
+                  "&timeFormat=iso8601&intervals=1&arrivalMetrics")
+
+    full_url = "http://" + server_url + ':' + port + api_url + option_url
+    return full_url
+
+
+def get_api_json(
     query_url: str
 ) -> Dict:
     '''
@@ -107,18 +142,22 @@ def get_availability_json(
 
     ValueError: If the response from the ApolloServer is not a valid json
     '''
+    logging.debug(f"Api query: {query_url}")
     availability_response = requests.get(query_url)
 
     availability_response.raise_for_status()
 
     availability = availability_response.json()
 
+    logging.debug(f"Api query: {query_url}")
+
     return availability
 
 
 def get_channel_availability(
     availability: Dict,
-    end_time: datetime
+    end_time: datetime,
+    server_url: str
 ) -> AcquisionStatistics:
     '''
     Parameters
@@ -154,7 +193,11 @@ def get_channel_availability(
                 last_time = datetime.strptime(last_timestamp,
                                               '%Y-%m-%dT%H:%M:%S.%f000Z')
 
-                latency = get_latency(end_time, last_time)
+                latency = get_latency(
+                    end_time=end_time,
+                    server_url=server_url,
+                    sncl=channel["id"]
+                )
 
                 if latency < 0:
                     latency = 0

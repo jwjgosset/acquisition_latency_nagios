@@ -86,9 +86,10 @@ def main(
     # and to compare timestamps to for latency values
     end_time = datetime.now()
     start_time = end_time - timedelta(hours=1)
-    url = availability_health.assemble_url('localhost', start_time, end_time)
+    url = availability_health.assemble_availability_url(
+        'localhost', start_time, end_time)
     logging.debug(f"API URL: {url}")
-    availability = availability_health.get_availability_json(url)
+    availability = availability_health.get_api_json(url)
 
     # Get the channel_latency objects and list of unavailable channels
     acquisition_statistics = \

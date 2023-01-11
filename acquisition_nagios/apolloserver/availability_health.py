@@ -17,6 +17,12 @@ class ChannelLatency:
     timestamp: datetime
     latency: float
 
+    def __str__(self):
+        latency = self.latency
+        age = round((datetime.now() - self.timestamp).total_seconds(), 2)
+        return (f"{self.channel}, arrived {age}s ago arrived with" +
+                f" {round(latency, 2)}s latency")
+
 
 @dataclass
 class AcquisionStatistics:
@@ -348,6 +354,6 @@ def assemble_details(
             ok_details += (f"{stats.channel} {stats.timestamp} " +
                            f"{stats.latency}s\n")
 
-    details = stale_details + crit_details + warn_details + ok_details
+    details = stale_details + "\n" + crit_details + warn_details + ok_details
 
     return details

@@ -345,14 +345,11 @@ def assemble_details(
     # Sort latency statistics by threshold for display
     for stats in acquisition_statistics.channel_latency:
         if NagiosRange(critical_time).in_range(stats.latency):
-            crit_details += (f"{stats.channel} {stats.timestamp} " +
-                             f"{stats.latency}s\n")
+            crit_details += (f"{str(stats)}\n")
         elif NagiosRange(warning_time).in_range(stats.latency):
-            warn_details += (f"{stats.channel} {stats.timestamp} " +
-                             f"{stats.latency}s\n")
+            warn_details += (f"{str(stats)}\n")
         else:
-            ok_details += (f"{stats.channel} {stats.timestamp} " +
-                           f"{stats.latency}s\n")
+            ok_details += (f"{str(stats)}\n")
 
     details = stale_details + "\n" + crit_details + warn_details + ok_details
 

@@ -11,11 +11,6 @@ from acquisition_nagios.nagios.models import NagiosPerformance
 
 @click.command()
 @click.option(
-    '--expected-channels',
-    help=('The number or channels expected to arrive at the aquisition ' +
-          'server')
-)
-@click.option(
     '--warning',
     help=('The warning range for the percentage of channels available. ' +
           'See Nagios documentation')
@@ -62,8 +57,12 @@ from acquisition_nagios.nagios.models import NagiosPerformance
     help="Guralp cache folder",
     default='/var/cache/guralp'
 )
+@click.option(
+    '--archive-folder',
+    help="Location of the long term archive",
+    default='/data/archive'
+)
 def main(
-    expected_channels: int,
     warning: str,
     critical: str,
     warning_time: str,
@@ -72,7 +71,8 @@ def main(
     critical_count: str,
     logfile: str,
     log_level: Optional[str],
-    cache_folder: str
+    cache_folder: str,
+    archive_folder: str
 ):
     # Configure logging
     if logfile is not None:
@@ -90,17 +90,21 @@ def main(
     # Use the current time to compare to channel timestamps
     end_time = datetime.now()
 
+    expected_channels = guralp_availability.get_expected_channels()
+
     # Get the last timestamp and latency values for all the channels available
     # in the cache folder
     acquisition_statistics = guralp_availability.get_channel_latency(
         cache_folder=cache_folder,
-        time=end_time
+        archive_folder=archive_folder,
+        time=end_time,
+        expected_channels=expected_channels
     )
 
     # Determine the percentage expected channels that have latency files in
     # the cache
     percent_available = guralp_availability.check_availability(
-        expected_channels=int(expected_channels),
+        expected_channels=len(expected_channels),
         found_channels=len(acquisition_statistics.channel_latency)
     )
 
@@ -141,7 +145,7 @@ def main(
         warning=float(warning_count)
     ))
 
-    missing_channels = int(expected_channels) - len(
+    missing_channels = len(expected_channels) - len(
         acquisition_statistics.channel_latency)
 
     details = (f"Stale channels: {missing_channels}, ")

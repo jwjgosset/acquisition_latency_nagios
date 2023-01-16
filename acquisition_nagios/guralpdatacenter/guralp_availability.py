@@ -18,7 +18,7 @@ class ChannelLatency:
 @dataclass
 class AcquisitionStatistics:
     channel_latency: List[ChannelLatency]
-#    unavailable_channels: List[str]
+    unavailable_channels: List[str]
 
 
 def get_expected_channels(
@@ -72,15 +72,30 @@ def get_expected_channels(
 
 def get_channel_latency(
     cache_folder: str,
-    time: datetime
+    archive_folder: str,
+    time: datetime,
+    expected_channels: List[str]
 ) -> AcquisitionStatistics:
     '''
+    Parameters
+    ----------
     cache_folder: str
         The folder where the Guralp Datacenter stores cached miniseed, soh and
         latency files
 
+    archive_folder: str
+        The folder where the long-term archive is stored
+
     time: datetime
         Datetime object representing the current time
+
+    expected_channels: List
+        List of channels expected to be available
+
+    Returns
+    -------
+    AcquisitionStatistics
+        Object containing arrival times and latencies for channels
     '''
 
     # Use year and jday from current time to ensure that old files aren't read
@@ -89,22 +104,56 @@ def get_channel_latency(
 
     channel_latency: List[ChannelLatency] = []
 
+    # Determine the path to the latency subdirectory in the cache and archive
     cache_path = pathlib.Path(cache_folder).joinpath('latency')
 
-    latency_files = list(cache_path.glob(f"*_*_*_H??_{year}_{jday}.csv"))
+    archive_path = pathlib.Path(archive_folder).joinpath('latency')
 
-    logging.debug(f"Latency files found: {latency_files}")
+    missing_channels: List[str] = []
 
-    logging.debug(f"Current time: {time}")
+    for channel in expected_channels:
 
-    for lat_file in latency_files:
+        channel_parts = channel.split('.')
 
-        channel_latency.append(
-            get_latencystatistics_of_last_row(
-                csv_file=lat_file,
-                time=time))
+        net = channel_parts[0]
+        sta = channel_parts[1]
+        loc = channel_parts[2]
+        cha = channel_parts[3]
 
-    return AcquisitionStatistics(channel_latency)
+        # Search for a latency file for the channel in the cache
+        latency_files = list(cache_path.glob(
+            f"{net}_{sta}_{loc}_{cha}_{year}_{jday}.csv"))
+
+        if len(latency_files) < 1:
+
+            # Loop through the last 7 days of the long-term archive
+            working_date = time - timedelta(days=1)
+
+            end_date = time - timedelta(days=7)
+
+            while working_date > end_date:
+                latency_files = list(archive_path.glob(
+                    (working_date.strftime('%Y/%m/%d') +
+                     f"/{net}_{sta}_{loc}_{cha}_*_*.csv")))
+
+                # Stop looping if a latency file is found
+                if len(latency_files) > 0:
+                    break
+                else:
+                    working_date = working_date - timedelta(days=1)
+
+        if len(latency_files) > 0:
+            channel_latency.append(
+                get_latencystatistics_of_last_row(
+                    csv_file=latency_files[0]))
+        # If no latency file was found for the last 7 days, flag the channel
+        # as misisng/unavailable
+        else:
+            missing_channels.append(channel)
+
+    return AcquisitionStatistics(
+        channel_latency=channel_latency,
+        unavailable_channels=missing_channels)
 
 
 def check_availability(
@@ -131,8 +180,7 @@ def check_availability(
 
 
 def get_latencystatistics_of_last_row(
-    csv_file: pathlib.Path,
-    time: datetime
+    csv_file: pathlib.Path
 ) -> ChannelLatency:
     '''
     Reads a CSV file of latency information and returns the timestamp for the
@@ -148,24 +196,35 @@ def get_latencystatistics_of_last_row(
     datetime: A datetime object representing the timestamp of the most recent
     entry in the csv file
     '''
+    # Get the last line from the file
     f = open(csv_file, "r", encoding="utf-8", errors="ignore")
     last_line = f.readlines()[-1]
 
+    # Break the line up
     line = last_line.split(',')
 
     time_string = line[0]
 
     channel_name = line[1]
 
-    network_latency = float(line[2])
+    data_latency = line[3]
 
-    timestamp = (datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S.%f") -
-                 timedelta(seconds=network_latency))
+    # Convert data latency into real number
+    # =100/100+0.3
 
-    latency = (time - timestamp).total_seconds()
+    datlatparts = data_latency.split('+')
 
-    if latency < 0:
-        latency = 0
+    net_lat = float(datlatparts[1])
+
+    filltimeparts = ((datlatparts[0]).lstrip('=')).split('/')
+
+    dat_lat = net_lat + (float(filltimeparts[0]) / float(filltimeparts[1]))
+
+    # Assemble ChannelLatency object
+    timestamp = (datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S.%f") +
+                 timedelta(seconds=dat_lat))
+
+    latency = dat_lat
 
     return ChannelLatency(channel_name, timestamp, latency)
 

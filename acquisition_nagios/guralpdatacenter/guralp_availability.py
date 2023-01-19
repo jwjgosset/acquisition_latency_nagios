@@ -14,6 +14,12 @@ class ChannelLatency:
     timestamp: datetime
     latency: float
 
+    def __str__(self):
+        latency = self.latency
+        age = round((datetime.now() - self.timestamp).total_seconds(), 2)
+        return (f"{self.channel}, arrived {age}s ago arrived with" +
+                f" {round(latency, 2)}s latency")
+
 
 @dataclass
 class AcquisitionStatistics:
@@ -290,3 +296,46 @@ def get_latency_threshold_state(
         state = NagiosOutputCode.ok
 
     return LatencyCheckResults(crit_count, warn_count, state)
+
+
+def assemble_details(
+    acquisition_statistics: AcquisitionStatistics,
+    warning_time: str,
+    critical_time: str
+) -> str:
+
+    acquisition_statistics.channel_latency.sort(
+        key=lambda x: x.latency,
+        reverse=True)
+
+    missing_channels = "Channels stale for more than a week:\n"
+
+    for missing_channel in acquisition_statistics.unavailable_channels:
+        missing_channels += (missing_channel + '\n')
+
+    stale_channels = "Stale channels:\n"
+
+    critical_channels = f"Channels with latency above {critical_time}s:\n"
+
+    warning_channels = f"Channels with latency above {warning_time}s:\n"
+
+    good_channels = "Channels with good latency:\n"
+
+    for channel in acquisition_statistics.channel_latency:
+        if channel.timestamp < (datetime.now() - timedelta(hours=1)):
+            stale_channels += (str(channel) + '\n')
+
+        elif channel.latency > float(critical_time):
+            critical_channels += (str(channel) + '\n')
+
+        elif channel.latency > float(warning_time):
+            warning_channels += (str(channel) + '\n')
+
+        else:
+            good_channels += (str(channel) + '\n')
+
+    details = (missing_channels + '\n' + stale_channels + '\n' +
+               critical_channels + '\n' + warning_channels + '\n'
+               + good_channels)
+
+    return details

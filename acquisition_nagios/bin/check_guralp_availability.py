@@ -148,6 +148,8 @@ def main(
     missing_channels = len(expected_channels) - len(
         acquisition_statistics.channel_latency)
 
+    # Make a function to assemble the details
+
     details = (f"Stale channels: {missing_channels}, ")
 
     details += (f"Channels with latency over {warning_time}s: ")

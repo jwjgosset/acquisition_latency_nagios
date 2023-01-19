@@ -1,4 +1,6 @@
 import logging
+from acquisition_nagios.guralpdatacenter.guralp_availability import \
+    assemble_details
 from acquisition_nagios.guralpdatacenter import guralp_availability
 from acquisition_nagios import acquisition_availability
 import sys
@@ -145,30 +147,11 @@ def main(
         warning=float(warning_count)
     ))
 
-    missing_channels = len(expected_channels) - len(
-        acquisition_statistics.channel_latency)
-
-    # Make a function to assemble the details
-
-    details = (f"Stale channels: {missing_channels}, ")
-
-    details += (f"Channels with latency over {warning_time}s: ")
-
-    details += (f"{latency_results.warn_count}, ")
-
-    details += (f"Channels with latency over {critical_time}s: ")
-
-    details += (f"{latency_results.crit_count}")
-
-    details += "\n\nChannels sorted by latency: \n"
-
-    acquisition_statistics.channel_latency.sort(
-        key=lambda x: x.latency,
-        reverse=True)
-
-    for channel_lat in acquisition_statistics.channel_latency:
-        details += (f"{channel_lat.channel} {channel_lat.timestamp} " +
-                    f"({channel_lat.latency}s)\n")
+    details = assemble_details(
+        acquisition_statistics=acquisition_statistics,
+        warning_time=warning_time,
+        critical_time=critical_time
+    )
 
     message = acquisition_availability.assemble_message(
         state=state,

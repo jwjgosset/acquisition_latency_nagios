@@ -1,6 +1,7 @@
 import logging
+from pathlib import Path
 from acquisition_nagios.guralpdatacenter.guralp_availability import \
-    assemble_details
+    assemble_details, get_masked_channels
 from acquisition_nagios.guralpdatacenter import guralp_availability
 from acquisition_nagios import acquisition_availability
 import sys
@@ -64,6 +65,11 @@ from acquisition_nagios.nagios.models import NagiosPerformance
     help="Location of the long term archive",
     default='/data/archive'
 )
+@click.option(
+    '-mask-file',
+    help="File containing list of channels to ignore",
+    default=None
+)
 def main(
     warning: str,
     critical: str,
@@ -74,7 +80,8 @@ def main(
     logfile: str,
     log_level: Optional[str],
     cache_folder: str,
-    archive_folder: str
+    archive_folder: str,
+    mask_file: Optional[str]
 ):
     # Configure logging
     if logfile is not None:
@@ -93,6 +100,14 @@ def main(
     end_time = datetime.now()
 
     expected_channels = guralp_availability.get_expected_channels()
+
+    if mask_file is not None:
+        masked_channels = get_masked_channels(mask_file=Path(mask_file))
+        # Remove masked channels from expected channels
+        for item in expected_channels:
+            if item in masked_channels:
+                expected_channels.remove(item)
+        pass
 
     # Get the last timestamp and latency values for all the channels available
     # in the cache folder

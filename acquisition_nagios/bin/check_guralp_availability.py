@@ -66,7 +66,7 @@ from acquisition_nagios.nagios.models import NagiosPerformance
     default='/data/archive'
 )
 @click.option(
-    '-mask-file',
+    '--mask-file',
     help="File containing list of channels to ignore",
     default=None
 )

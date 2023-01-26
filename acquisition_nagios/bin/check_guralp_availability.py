@@ -101,13 +101,17 @@ def main(
 
     expected_channels = guralp_availability.get_expected_channels()
 
+    logging.debug(f"Expected channels: {expected_channels}")
+
     if mask_file is not None:
         masked_channels = get_masked_channels(mask_file=Path(mask_file))
+        logging.debug(f"Masked channels: {masked_channels}")
         # Remove masked channels from expected channels
         for item in expected_channels:
             if item in masked_channels:
                 expected_channels.remove(item)
-        pass
+        logging.debug(
+            f"Expected channels without masked channels: {expected_channels}")
 
     # Get the last timestamp and latency values for all the channels available
     # in the cache folder

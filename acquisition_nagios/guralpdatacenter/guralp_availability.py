@@ -273,6 +273,7 @@ def get_latency_threshold_state(
         critical threshold, and the Nagios state
 
     '''
+    # TODO: Handle channels with negative latency
     crit_count = 0
     warn_count = 0
 
@@ -303,16 +304,40 @@ def assemble_details(
     warning_time: str,
     critical_time: str
 ) -> str:
+    '''
+    Assemble the additional details to display with the Nagios check
 
+    Parameters
+    ----------
+    acquisiton_statistics: AcquisitionStatistics
+        Object containing statistics about channel latency, arrival and a list
+        of missing channels
+
+    warning_time: str
+        The time in seconds considered the warning threshold for latency
+
+    critical_time: str
+        The time in seconds considered the critical threshold for latency
+
+    Returns
+    -------
+    str: The lines to include as the details in the nagios check, as a single
+    string
+    '''
+    # TODO: handle channels with negative latency
+
+    # Sort the latency statistics so largest latency is first
     acquisition_statistics.channel_latency.sort(
         key=lambda x: x.latency,
         reverse=True)
 
+    # Assemble missing channels
     missing_channels = "Channels stale for more than a week:\n"
 
     for missing_channel in acquisition_statistics.unavailable_channels:
         missing_channels += (missing_channel + '\n')
 
+    # Initialize detail section headers
     stale_channels = "Stale channels:\n"
 
     critical_channels = f"Channels with latency above {critical_time}s:\n"
@@ -321,6 +346,7 @@ def assemble_details(
 
     good_channels = "Channels with good latency:\n"
 
+    # Sort channels into their respective sections
     for channel in acquisition_statistics.channel_latency:
         if channel.timestamp < (datetime.now() - timedelta(hours=1)):
             stale_channels += (str(channel) + '\n')
@@ -334,8 +360,21 @@ def assemble_details(
         else:
             good_channels += (str(channel) + '\n')
 
+    # Combine the strings into one
     details = (missing_channels + '\n' + stale_channels + '\n' +
                critical_channels + '\n' + warning_channels + '\n'
                + good_channels)
 
     return details
+
+
+def get_masked_channels(
+    mask_file: pathlib.Path
+):
+    if not mask_file.exists():
+        logging.warning(f"Could not find mask file {str(mask_file)}")
+        return []
+    else:
+        with open(mask_file) as f:
+            masked_channels = f.readlines()
+        return masked_channels

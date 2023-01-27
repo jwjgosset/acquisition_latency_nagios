@@ -108,9 +108,13 @@ def main(
         logging.debug(f"Masked channels: {masked_channels}")
         # Remove masked channels from expected channels
 
+        new_expected_channels: List[str] = []
+
         for item in expected_channels:
-            if item in masked_channels:
-                expected_channels.remove(item)
+            if item not in masked_channels:
+                new_expected_channels.append(item)
+
+        expected_channels = new_expected_channels
         logging.debug(
             f"Expected channels without masked channels: {expected_channels}")
 

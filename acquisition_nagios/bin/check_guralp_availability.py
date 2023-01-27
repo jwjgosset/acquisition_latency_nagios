@@ -107,8 +107,9 @@ def main(
         masked_channels = get_masked_channels(mask_file=Path(mask_file))
         logging.debug(f"Masked channels: {masked_channels}")
         # Remove masked channels from expected channels
+
         for item in expected_channels:
-            if (item + '\n') in masked_channels:
+            if item in masked_channels:
                 expected_channels.remove(item)
         logging.debug(
             f"Expected channels without masked channels: {expected_channels}")

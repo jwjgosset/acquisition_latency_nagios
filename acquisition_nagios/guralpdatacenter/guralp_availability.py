@@ -377,4 +377,6 @@ def get_masked_channels(
     else:
         with open(mask_file) as f:
             masked_channels = f.readlines()
+            for line in masked_channels:
+                line.rstrip('\n')
         return masked_channels

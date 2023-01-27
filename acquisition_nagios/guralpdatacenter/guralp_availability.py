@@ -375,8 +375,9 @@ def get_masked_channels(
         logging.warning(f"Could not find mask file {str(mask_file)}")
         return []
     else:
+        masked_channels: List[str] = []
         with open(mask_file) as f:
-            masked_channels = f.readlines()
-            for line in masked_channels:
-                line.rstrip('\n')
+            filelines = f.readlines()
+            for line in filelines:
+                masked_channels.append(line.rstrip('\n'))
         return masked_channels
